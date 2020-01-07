@@ -62,7 +62,7 @@ def _make_features(id_, weights, inputs, tokenizer, max_len):
     i = 0
     for ids, w in zip(inputs, weights):
         if len(ids) > max_len:
-            if len(sents) >= 2:
+            if len(sents) >= 2:#jump unpaired long sentence
                 feat = _make_feature(id_ + i, sents, ws, end_of_text_id)
                 if feat is not None:
                     features.append(feat)
@@ -84,6 +84,7 @@ def _make_features(id_, weights, inputs, tokenizer, max_len):
         ws.append(w)
     if len(sents) >= 2:
         feat = _make_feature(id_ + i, sents, ws, end_of_text_id)
+        #print(vars(feat))
         if feat is not None:
             features.append(feat)
 
@@ -105,7 +106,7 @@ def _make_feature(id_, sents, ws, eos):
             continue
 
         token_type_ids += [i] * (len(s) + 1)
-        if w == 0.0:
+        if w == 0.0:#w==0.0 labels do not join supervised，indicate this sentence is ask ,is not answer.
             lm_labels += [-1] * (len(s) + 1)
             weights += [0.0] * (len(s) + 1)
         else:
@@ -114,6 +115,7 @@ def _make_feature(id_, sents, ws, eos):
 
     # handle trailing -1's
     i = len(lm_labels) - 1
+    #find not -1 position
     while i >= 0:
         if lm_labels[i] != -1:
             break
@@ -143,6 +145,7 @@ def _make_feature(id_, sents, ws, eos):
 
 
 def main(args):
+    print("GPT2Tokenizer load ...\n")
     toker = GPT2Tokenizer.from_pretrained('gpt2')
     attrs = []
     if args.reverse:
@@ -154,10 +157,21 @@ def main(args):
                    f'{".".join(attrs)}.db/db')
     else:
         db_path = f'{args.corpus[:-4]}.{args.max_seq_len}len.db/db'
+
+    print("db_path:",db_path)
+    print("corpus:",args.corpus)
+
     if exists(dirname(db_path)):
-        raise ValueError('Found existing DB, please backup')
+        Y = input("Found existing DB,Del and makedirs again. (Y/N):")
+        if(Y=="Y"):
+            import shutil
+            shutil.rmtree(dirname(db_path))
+            os.makedirs(dirname(db_path))
+        else:
+            raise ValueError('Found existing DB, please backup')
     else:
         os.makedirs(dirname(db_path))
+
     with open(args.corpus, "r", encoding="utf-8") as reader, \
             shelve.open(db_path, 'n') as db:
         chunk = []
