@@ -218,6 +218,7 @@ if args.fp16:
     try:
         from apex.optimizers import FP16_Optimizer
         from apex.optimizers import FusedAdam
+        from apex import amp
     except ImportError:
         raise ImportError(
             "Please install apex from https://www.github.com/nvidia/apex "
@@ -225,8 +226,11 @@ if args.fp16:
 
     optimizer = FusedAdam(optimizer_grouped_parameters,
                           lr=args.learning_rate,
-                          bias_correction=False,
-                          max_grad_norm=1.0)
+                          bias_correction=False)
+
+    model, optimizer = amp.initialize(model, optimizer, opt_level="O2")
+
+    """
     if args.loss_scale == 0:
         optimizer = FP16_Optimizer(optimizer, dynamic_loss_scale=True,
                                    verbose=False)
@@ -234,6 +238,8 @@ if args.fp16:
         optimizer = FP16_Optimizer(optimizer,
                                    static_loss_scale=args.loss_scale,
                                    verbose=False)
+    """
+
 else:
     optimizer = Adam(optimizer_grouped_parameters, args.learning_rate,
                      max_grad_norm=1.0)
@@ -285,7 +291,11 @@ while True:
             ppl = ppl.mean()
         loss = loss / (args.train_batch_size / input_ids.shape[0])
         if args.fp16:
-            optimizer.backward(loss)
+            #optimizer.backward(loss)
+            with amp.scale_loss(loss, optimizer) as scaled_loss:
+                scaled_loss.backward()
+            torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), 1.0)
+
         else:
             loss.backward()
 
