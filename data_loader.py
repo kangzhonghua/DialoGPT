@@ -171,7 +171,7 @@ def convert_examples_to_features_dynamic(examples, tokenizer,
     def featurize(example):
         conv_id = example.conv_id
         context_id = tokenizer.encode(example.context)
-        end_of_text_id = tokenizer.encoder[END_OF_TEXT_TOKEN]
+        end_of_text_id = tokenizer.convert_tokens_to_ids(END_OF_TEXT_TOKEN)
 
         # response is provided in example
         response_id = tokenizer.encode(example.response)
