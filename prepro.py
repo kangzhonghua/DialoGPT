@@ -54,7 +54,7 @@ def _get_inputs_from_text(text, tokenizer):
 
 
 def _make_features(id_, weights, inputs, tokenizer, max_len):
-    end_of_text_id = tokenizer.encoder[END_OF_TEXT_TOKEN]
+    end_of_text_id = tokenizer.convert_tokens_to_ids(END_OF_TEXT_TOKEN)
     features = []
     sents = []
     ws = []
