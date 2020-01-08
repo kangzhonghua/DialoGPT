@@ -42,9 +42,12 @@ def load_model(model, checkpoint, args, verbose=False):
         #logger.info('in fp16, model.half() activated')
         #model.half()
     model.to(device)
+
     if n_gpu > 1:
         logging.info('data parallel because more than one gpu')
         model = torch.nn.DataParallel(model)
+
+
     return model
 
 
@@ -135,7 +138,7 @@ def get_eval_list_same_length(input_file, tokenizer, max_batch_size,
     def featurize(example):
         conv_id = example.conv_id
         context_id = tokenizer.encode(example.context)
-        end_of_text_id = tokenizer.encoder[END_OF_TEXT_TOKEN]
+        end_of_text_id = tokenizer.convert_tokens_to_ids(END_OF_TEXT_TOKEN)
 
         response_id = tokenizer.encode(example.response)
         input_ids = context_id + [end_of_text_id]
